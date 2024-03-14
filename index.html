@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Three.js Red Sphere with Smooth Noisy Surface (Point Light Source + Rotation + Skybox)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<script>
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        var controls = new THREE.OrbitControls(camera, renderer.domElement, scene);
+
+        var texturePath = 'textures/';
+        var loader = new THREE.CubeTextureLoader();
+        var texture = loader.load([
+            texturePath + 'skybox_front.jpg',
+            texturePath + 'skybox_back.jpg',
+            texturePath + 'skybox_left.jpg',
+            texturePath + 'skybox_right.jpg',
+            texturePath + 'skybox_top.jpg',
+            texturePath + 'skybox_bottom.jpg'
+        ]);
+
+        scene.background = texture;
+
+        var redSphereGeometry = new THREE.SphereGeometry(5, 32, 32);
+        var redSphereMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+        var redSphere = new THREE.Mesh(redSphereGeometry, redSphereMaterial);
+
+        var vertices = redSphere.geometry.getAttribute('position');
+
+        var noiseScale = 0.5;
+        var turbulence = 0.008;
+
+        for (var i = 0; i < vertices.count; i++) {
+            var vertex = new THREE.Vector3();
+            vertex.fromBufferAttribute(vertices, i);
+
+            var noiseValue = Math.sin(turbulence * Math.pow(noiseScale * vertex.x, 4)) +
+                             Math.sin(turbulence * Math.pow(noiseScale * vertex.y, 4)) +
+                             Math.sin(turbulence * Math.pow(noiseScale * vertex.z, 4));
+
+            vertex.x += noiseValue;
+            vertex.y += noiseValue;
+            vertex.z += noiseValue;
+
+            vertices.setXYZ(i, vertex.x, vertex.y, vertex.z);
+			
+}
+        redSphere.geometry.setAttribute('position', vertices);
+
+        scene.add(redSphere);
+
+        var light = new THREE.PointLight(0xffffff, 1, 200);
+        light.position.set(0, 0, 0);
+        scene.add(light);
+
+        var blueSphereGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+        var blueSphereMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+        var blueSphere = new THREE.Mesh(blueSphereGeometry, blueSphereMaterial);
+        scene.add(blueSphere);
+
+        var greenSphereGeometry = new THREE.SphereGeometry(0.2, 32, 32);
+        var greenSphereMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+        var greenSphere = new THREE.Mesh(greenSphereGeometry, greenSphereMaterial);
+        scene.add(greenSphere);
+
+        camera.position.z = 15;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            light.position.x = 80 * Math.cos(Date.now() * 0.001);
+            light.position.z = 80 * Math.sin(Date.now() * 0.001);
+
+            redSphere.rotation.y += 0.001;
+
+            blueSphere.position.x = 10 * Math.cos(Date.now() * 0.0001);
+            blueSphere.position.z = 10 * Math.sin(Date.now() * 0.0001);
+
+            greenSphere.position.x = 30 * Math.cos(Date.now() * 0.0009);
+            greenSphere.position.z = 30 * Math.sin(Date.now() * 0.0009);
+            greenSphere.position.y = 1 * Math.sin(Date.now() * 0.0009);
+
+            renderer.render(scene, camera);
+            update();
+        }
+
+        function update() {
+            controls.update();
+        }
+
+        animate();
+    </script>
+</body>
+</html>
